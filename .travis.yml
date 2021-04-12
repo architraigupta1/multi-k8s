@@ -1,0 +1,25 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t architraigupta/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true architraigupta/react-test npm test
+
+after_success:
+  # build all 4 docker images
+  - docker build -t architraigupta/multi-client ./client
+  - docker build -t architraigupta/multi-nginx ./nginx
+  - docker build -t architraigupta/multi-server ./server
+  - docker build -t architraigupta/multi-worker ./worker
+
+  # Login to docer cli
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # Take the docker imgaes built above and push them to docker hub
+  - docker push architraigupta/multi-client
+  - docker push architraigupta/multi-nginx
+  - docker push architraigupta/multi-server
+  - docker push architraigupta/multi-worker
